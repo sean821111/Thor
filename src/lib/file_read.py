@@ -58,7 +58,56 @@ def load_ppg(file_path, source):
         if ext == '.csv':
             x, y = read_csv(full_path)
         else:
+            
             x, y = read_txt(full_path)
         return x,y
     else:
         raise ValueError("file source '{}' not found!".format(source))
+    
+    
+# data protocol have 3 channels ACC and 1 chanel PPG 
+def loadData(file_path):
+    f = open(file_path, "r", encoding='utf-8') 
+
+    lines = f.readlines()
+
+    dataDict = []
+    head = ['accX', 'accY', 'accZ', 'acc', 'G']
+    dataDict = {r:[] for r in head}
+
+    for line in lines:
+        line = line.replace("\n", "")
+        if line != "" :
+            # avoid \ufeff occur
+            _tmp = line.encode('utf-8').decode('utf-8-sig').split(",")
+            
+            for col in range(len(head)):
+    
+                # divide 2048 for normalize
+                if col < 3:
+                    dataDict[head[col]].append(float(_tmp[col])/2048.0)
+                else:
+                    dataDict[head[col]].append(float(_tmp[col]))
+
+    return dataDict
+
+# data protocol have 3 channels ACC and 2 chanel PPG (G and IR)
+def readcsv(file_path):
+    dataDict = []
+    head = ['accX', 'accY', 'accZ', 'acc', 'G', 'IR']
+    dataDict = {r:[] for r in head}
+    
+    with open(file_path, newline='', encoding="utf-8") as csvfile:
+        rows  = csv.reader(csvfile)
+        for row in rows:
+            if row != []:
+                for col in range(len(head)):
+                    # divide 2048 for normalize
+                    if col < 3:
+                        dataDict[head[col]].append(float(row[col])/2048.0)
+                    else:
+                        dataDict[head[col]].append(float(row[col]))
+
+    return dataDict
+
+

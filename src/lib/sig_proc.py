@@ -54,7 +54,10 @@ Z-score standardization
 def z_score(x):
     return (x - np.mean(x)) / np.std(x, ddof = 1)
 
-
+def normalized(a, maximum=None):
+    if maximum == None:
+        maximum = max(a) 
+    return [value/maximum for value in a]
 def bp_filter(lowcut, highcut, fs, order):
     nyq = 0.5 * fs
     low = lowcut / nyq
