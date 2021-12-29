@@ -9,6 +9,10 @@ import scipy.signal as signal
 from scipy.interpolate import interp1d
 
 
+def value_trans(data):
+    data = data*1.2/2097151.0
+    return data
+
 '''
 上下翻轉
 :param s: float array
@@ -58,6 +62,7 @@ def normalized(a, maximum=None):
     if maximum == None:
         maximum = max(a) 
     return [value/maximum for value in a]
+
 def bp_filter(lowcut, highcut, fs, order):
     nyq = 0.5 * fs
     low = lowcut / nyq
@@ -152,7 +157,7 @@ def find_peak_valley(sample_rate,filtered_ppg,ppg_time_list):
     
     #ppg_peak_dict = {'peak': ppg_peak, 'index': ppg_peak_x}
     #ppg_valley_dict = {'valley': ppg_valley, 'index': ppg_valley_x}
-    return  ppg_peak_x, ppg_peak_time_x, ppg_valley_x, ppg_valley_time_x, adaptive_windows_size
+    return  ppg_peak_x, ppg_peak_time_x, ppg_valley_x, ppg_valley_time_x
 
 
 # Feed ppg peak and its valley locations, return it as tulple format
