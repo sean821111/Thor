@@ -63,6 +63,7 @@ def normalized(a, maximum=None):
         maximum = max(a) 
     return [value/maximum for value in a]
 
+''' return filter parameters b,a'''
 def bp_filter(lowcut, highcut, fs, order):
     nyq = 0.5 * fs
     low = lowcut / nyq
@@ -76,6 +77,14 @@ def hp_filter(cutoff, fs, order):
     b, a = signal.butter(order, cut, btype='highpass', analog=False)
     return b,a
 
+def lp_filter(cutoff, fs, order):
+    nyq = 0.5 * fs
+    cut = cutoff/ nyq
+    b, a = signal.butter(order, cut, btype='low', analog=False)
+    return b,a
+
+
+''' return filtered signal '''
 def butter_bandpass_filter(data, lowcut, highcut, fs, order):
     nyq = 0.5 * fs
     low = lowcut / nyq
@@ -112,17 +121,14 @@ ppg feature extraction
 :return ppg_valley_time_x: int array
 :return adaptive_windows_size: int 
 '''
-def find_peak_valley(sample_rate,filtered_ppg,ppg_time_list):
+def find_peak_valley(sample_rate, filtered_ppg):
       #find-peak
-    sample_rate = sample_rate
     medium_max_count = 0
     medium_min_count = 0
     peak_count =0
     valley_count = 0
-    ppg_peak_x =[]
-    ppg_peak_time_x =[]
-    ppg_valley_x =[]
-    ppg_valley_time_x =[]
+    ppg_peak_x =[] # peak location index
+    ppg_valley_x =[] # valley location index
     adaptive_windows_size_min = math.ceil(sample_rate*0.25/2)  #最小時窗一半
     adaptive_windows_size_max = math.ceil(sample_rate/2) #最大時窗一半
     adaptive_windows_size = adaptive_windows_size_min #初始設定windows大小
@@ -138,7 +144,6 @@ def find_peak_valley(sample_rate,filtered_ppg,ppg_time_list):
                     if (medium_max_count == math.ceil(adaptive_windows_size)):
                         
                         #如 a = adaptive_windows_size 可知 ppg_data(x,1)為最大值
-                        ppg_peak_time_x.append(ppg_time_list[i]) #取出峰點   
                         ppg_peak_x.append(i)
 
                         if (len(ppg_peak_x) > 1 ): #更新視窗寬度
@@ -149,40 +154,39 @@ def find_peak_valley(sample_rate,filtered_ppg,ppg_time_list):
                     medium_min_count = medium_min_count +1
                     #中間小於左右次數
                     if (medium_min_count == math.ceil(adaptive_windows_size)):
-                        ppg_valley_time_x.append(ppg_time_list[i]) #取出峰點   
                         ppg_valley_x.append(i)
                         valley_count+=1                                                     
         medium_max_count = 0
         medium_min_count = 0
-    
-    #ppg_peak_dict = {'peak': ppg_peak, 'index': ppg_peak_x}
-    #ppg_valley_dict = {'valley': ppg_valley, 'index': ppg_valley_x}
-    return  ppg_peak_x, ppg_peak_time_x, ppg_valley_x, ppg_valley_time_x
+
+    return  ppg_peak_x, ppg_valley_x
 
 
 # Feed ppg peak and its valley locations, return it as tulple format
+# return 2d array [[trough_loc0, peak_loc, trough_loc1], [], ...]
 def pulse_seg(ppg_peak_loc, ppg_valley_loc):
     pulse_loc_set = []
     for j in range(1, len(ppg_valley_loc)):
         # find single periodic wave
-        v_t0 = ppg_valley_loc[j-1]
-        v_t1 = ppg_valley_loc[j]
+        v0Loc = ppg_valley_loc[j-1]
+        v1Loc = ppg_valley_loc[j]
 
-        t_duration = (v_t1-v_t0)
         # extract single pulse
         for k, loc in enumerate(ppg_peak_loc):
-            if loc > v_t0 and loc < v_t1:
-                p_t1 = ppg_peak_loc[k]
-                pulse_loc_set.append([v_t0, p_t1, v_t1])
+            if loc > v0Loc and loc < v1Loc:
+                pkLoc = ppg_peak_loc[k]
+                pulse_loc_set.append([v0Loc, pkLoc, v1Loc])
+                # avoid two peak
+                break
     return pulse_loc_set
 
-# interpolate into fix data length for template matching using
+# interpolate into fix data length for template matching 
 def single_pulse_tailor(pulse_loc, filtered_ppg, pulse_width=40):
     pulse_width = int(pulse_width)
-    v_t0 = pulse_loc[0]
-    p_t1 = pulse_loc[1]
-    v_t1 = pulse_loc[2]
-    y = np.array(filtered_ppg[v_t0:v_t1])
+    v0Loc = pulse_loc[0]
+    # pkLoc = pulse_loc[1]
+    v1Loc = pulse_loc[2]
+    y = np.array(filtered_ppg[v0Loc:v1Loc])
     f = interp1d(np.arange(y.size),y)
     interp_ppg = f(np.linspace(0,y.size-1, pulse_width))
    
@@ -213,8 +217,6 @@ Parameters:
     source: string
         e.g. G2, G1, _R, IR, ACC
 '''
-
-
 def ppg_preprocess(ppg_data, sr, norm=1, flip=1):
     # band pass filter parameters
     b_b, b_a = bp_filter(0.5, 10, sr, 4)
@@ -236,7 +238,6 @@ def ppg_preprocess(ppg_data, sr, norm=1, flip=1):
 x: int array
 y: int array
 '''
-
 def corrcoef(x,y):
     n = len(x)
     x_mu = np.mean(x)
