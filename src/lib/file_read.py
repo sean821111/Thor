@@ -45,11 +45,12 @@ def read_csv(full_path):
 
 
 # for stark format
+    
 def csv_reader(file_path, source='all'):
     for f in os.listdir(file_path):
         if re.findall(source, f):
             file_name = str(f)
-    if 'file_name' in locals():
+    if file_name in locals():
         ext = os.path.splitext(file_name)[-1].lower()
 
         if ext == '.csv':
@@ -111,20 +112,26 @@ def load_ppg(file_path, source=None):
             raise ValueError("file source '{}' not found!".format(source))
         
         
-# Thor+ reader
-def _thor2_csv_format(full_file_path):
+# csv reader format
+def _csv_format(full_file_path):
+    
     f = open(full_file_path, "r", encoding='utf-8') 
     lines = f.readlines()
-    dataDict = []
 
 
     firstrow = lines[0].replace("\n", "")
-    # PPG format
-    head = [v for v in firstrow.split(',')]
-        
+    firstrow_split = [v for v in firstrow.split(',') if v!='']
+    if firstrow_split[0] =="Index":
+        start_row = 1
+        head = firstrow_split
+    else:
+        start_row = 0
+        head = ['ecg', 'G', 'R', 'IR', 
+                        'accX', 'accY', 'accZ', 
+                        'gyroX', 'gyroY', 'gyroZ']
 
     dataDict = {r:[] for r in head}
-    for line in lines[1:]:
+    for line in lines[start_row:]:
         line = line.replace("\n", "")
 
         if line != "" :
@@ -133,10 +140,18 @@ def _thor2_csv_format(full_file_path):
             for col in range(len(head)):
                 dataDict[head[col]].append(float(_tmp[col]))
     return dataDict
+
+
+def stark_reader(file_path,):
+    # read first row as header
+    data = _csv_format(file_path)
+
+    return data
+
 def thor2_reader(file_path, source=None):
     # file path including file name
     if source == None:
-        data = _thor2_csv_format(file_path)
+        data = _csv_format(file_path)
         return data
     else:
         for f in os.listdir(file_path):
@@ -145,7 +160,7 @@ def thor2_reader(file_path, source=None):
         if 'file_name' in locals():  
             ext = os.path.splitext(file_name)[-1].lower()
             full_path = os.path.join(file_path, file_name)
-            data = _thor2_csv_format(full_path)
+            data = _csv_format(full_path)
             return data
         else:
             raise ValueError("file source '{}' not found!".format(source))
