@@ -65,22 +65,22 @@ def normalized(a, maximum=None):
 
 ''' return filter parameters b,a'''
 def bp_filter(lowcut, highcut, fs, order):
-    nyq = 0.5 * fs
-    low = lowcut / nyq
-    high = highcut / nyq
-    b, a = signal.butter(order, [low, high], btype='band', analog=False)
+    nyq     = 0.5 * fs
+    low     = lowcut / nyq
+    high    = highcut / nyq
+    b, a    = signal.butter(order, [low, high], btype='band', analog=False)
     return b, a
 
 def hp_filter(cutoff, fs, order):
-    nyq = 0.5 * fs
-    cut = cutoff/ nyq
-    b, a = signal.butter(order, cut, btype='highpass', analog=False)
+    nyq     = 0.5 * fs
+    cut     = cutoff/ nyq
+    b, a    = signal.butter(order, cut, btype='highpass', analog=False)
     return b,a
 
 def lp_filter(cutoff, fs, order):
-    nyq = 0.5 * fs
-    cut = cutoff/ nyq
-    b, a = signal.butter(order, cut, btype='low', analog=False)
+    nyq     = 0.5 * fs
+    cut     = cutoff/ nyq
+    b, a    = signal.butter(order, cut, btype='low', analog=False)
     return b,a
 
 
